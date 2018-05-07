@@ -128,17 +128,21 @@ module CarrierWave
 
         begin
           # first, create a workfile on which we perform processings
-          if move_to_cache
-            @file = new_file.move_to(File.expand_path(workfile_path, root), permissions, directory_permissions)
+          if new_file.file.is_a?(StringIO)
+            @file = new_file
           else
-            @file = new_file.copy_to(File.expand_path(workfile_path, root), permissions, directory_permissions)
+            if move_to_cache
+              @file = new_file.move_to(File.expand_path(workfile_path, root), permissions, directory_permissions)
+            else
+              @file = new_file.copy_to(File.expand_path(workfile_path, root), permissions, directory_permissions)
+            end
           end
 
           with_callbacks(:cache, @file) do
             @file = cache_storage.cache!(@file)
           end
         ensure
-          FileUtils.rm_rf(workfile_path(''))
+          FileUtils.rm_rf(workfile_path('')) unless new_file.file.is_a?(StringIO)
         end
       end
 
